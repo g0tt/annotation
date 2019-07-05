@@ -8,6 +8,7 @@ class AnCanvas extends React.Component {
       closed: false,
       mousePoint: null,
       movingPoint: null,
+      fillColor: "rgba(100, 100, 100, 0.8)",
     };
   }
 
@@ -22,6 +23,7 @@ class AnCanvas extends React.Component {
       closed: false,
       mousePoint: null,
       movingPoint: null,
+      fillColor: "rgba(100, 100, 100, 0.8)",
     });
   }
 
@@ -46,7 +48,6 @@ class AnCanvas extends React.Component {
   }
 
   onPointClick(e) {
-    console.log(e);
     if (this.state.points.length === 0) return;
     if (parseInt(e.target.getAttribute('cx')) === this.state.points[0].x &&  parseInt(e.target.getAttribute('cy')) === this.state.points[0].y) {
       this.setState({
@@ -56,15 +57,15 @@ class AnCanvas extends React.Component {
   }
 
   onSVGKeyDown = (e) => {
-    console.log(e.keyCode)
     if (e.keyCode == 87) {
       const mousePt = this.state.mousePoint;
+      const bb = this.refs.svg.getBoundingClientRect();
       const e = new MouseEvent("click", {
         view: window,
         bubbles: true,
         cancelable: true,
-        clientX: mousePt.x,
-        clientY: mousePt.y,
+        clientX: mousePt.x + bb.x,
+        clientY: mousePt.y + bb.y,
       });
       if (this.state.points.length > 2 && !this.state.close && this.isNearFirstPoint()) {
         this.close(e);
@@ -77,7 +78,6 @@ class AnCanvas extends React.Component {
   }
 
   onSVGMouseDown = (e) => {
-    console.log(this.state)
     if (this.state.closed || this.isNearFirstPoint()) return;
     var pt = this.refs.svg.createSVGPoint(), svgP, circle;
     pt.x = e.clientX;
@@ -104,6 +104,9 @@ class AnCanvas extends React.Component {
     }
     document.removeEventListener('mousemove', this.onMouseMove);
     document.addEventListener('mousemove', this.onPointMouseMove);
+    this.setState({
+      fillColor: "rgba(100, 100, 100, 0.2)",
+    });
   };
 
   onPointMouseUp = () => {
@@ -111,6 +114,9 @@ class AnCanvas extends React.Component {
     document.addEventListener('mousemove', this.onMouseMove);
     this.coords = {};
     this.props.logger.log("Reshape: " + JSON.stringify(this.state.points));
+    this.setState({
+      fillColor: "rgba(100, 100, 100, 0.8)",
+    });
   };
 
   onPointMouseMove = (e) => {
@@ -136,6 +142,24 @@ class AnCanvas extends React.Component {
       mousePoint: {x: svgP.x, y: svgP.y}
     });
   };
+
+  onMouseLeave = (e) => {
+    this.setState({
+      mousePoint: null
+    });
+  }
+
+  onPolygonMouseLeave = (e) => {
+    this.setState({
+      fillColor: "rgba(100, 100, 100, 0.8)",
+    });
+  }
+
+  onPolygonMouseEnter = (e) => {
+    this.setState({
+      fillColor: "rgba(100, 100, 100, 0.2)",
+    });
+  }
 
   addPoint(x, y) {
     if (this.state.points.length === 0) {
@@ -210,7 +234,9 @@ class AnCanvas extends React.Component {
             points={this.state.points.map((item) => item.x + "," + item.y).join(' ')}
             stroke="red"
             strokeWidth="3"
-            fill="rgba(100, 100, 100, 0.8)"
+            fill={this.state.fillColor}
+            onMouseLeave={this.onPolygonMouseLeave}
+            onMouseEnter={this.onPolygonMouseEnter}
           />
         );
       } else {
@@ -237,7 +263,7 @@ class AnCanvas extends React.Component {
       const firstPt = this.state.points[0];
       const mousePt = this.state.mousePoint;
       if (mousePt === null || this.state.closed) return;
-      if (this.state.points.length > 2 && !this.state.closed && this.state.mousePoint != null && this.isNearFirstPoint()) {
+      if (this.state.points.length > 2 && !this.state.closed && mousePt != null && this.isNearFirstPoint()) {
         return <circle
           cx={firstPt.x}
           cy={firstPt.y}
@@ -246,7 +272,7 @@ class AnCanvas extends React.Component {
           fill="red"
           onClick={this.close.bind(this)}
         />
-      } else {
+      } else if (mousePt != null) {
         return <circle
           cx={mousePt.x}
           cy={mousePt.y}
@@ -273,7 +299,8 @@ class AnCanvas extends React.Component {
           style={{height:"100%", width: "100%", top: "0px", left: "0px", overflow: "hidden"}}
           onMouseDown={this.onSVGMouseDown.bind(this)}
           onKeyDown={this.onSVGKeyDown.bind(this)}
-          onMouseMove={this.onMouseMove.bind(this)}>
+          onMouseMove={this.onMouseMove.bind(this)}
+          onMouseLeave={this.onMouseLeave.bind(this)}>
           { pl }
           { predict }
           { this.state.points.map((i) => {

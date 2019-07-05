@@ -90,19 +90,27 @@ class App extends React.Component {
           display: "block",
           width: "auto",
           height: "100%",
+          marginRight: "20px"
         }}>
           Task: {this.images[this.state.task]}
           <div style={{marginBottom: "10px"}}>
             <button onClick={this.prevImage.bind(this)}>Prev</button>
             <button onClick={this.nextImage.bind(this)}>Next</button>
-            <button onClick={this.undo.bind(this)}>Undo</button>
             <button onClick={this.reset.bind(this)}>Reset</button>
           </div>
           <textarea value={this.state.logText} ref="log" style={{
             width: "200px",
             height:"300px",
             resize: "none",
-          }} readOnly />
+          }} readOnly /><br/><br/><br/>
+          <span style={{fontSize: "2em"}}>
+            [Hotkey]<br />
+            W: Add a point<br />
+            A: Undo<br /><br />
+          </span>
+          <button style={{
+            fontSize: "3em",
+          }} onClick={this.undo.bind(this)}>Undo</button>
         </div>
       </div>
     );
